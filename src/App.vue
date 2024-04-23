@@ -3,9 +3,9 @@
 </script>
 
 <template>
-  <div>
-    start
-  </div>
+<div id="app">
+  <router-view/>
+</div>
 </template>
 
 <style scoped>

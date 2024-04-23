@@ -1,0 +1,32 @@
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body{
+  width: 100%;
+  height: 100vh;
+
+  overflow-x: hidden;
+
+  background-color: #fdfbfb;
+  color: rgb(68, 68, 68);
+}
+
+button{
+  outline: none;
+  border: inherit;
+  background-color: inherit;
+}
+ul{
+  list-style: none;
+}
+a{
+  color: inherit;
+  text-decoration: none;
+}
+
+.app{
+  height: 100%;
+}
