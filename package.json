@@ -9,7 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@jamescoyle/vue-icon": "^0.1.2",
+    "@mdi/js": "^7.4.47",
     "axios": "^1.6.8",
+    "mdi-vue": "^3.0.13",
     "vue": "^3.4.21",
     "vue-router": "^4.3.2"
   },
