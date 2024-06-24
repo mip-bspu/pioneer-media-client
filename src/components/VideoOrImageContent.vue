@@ -1,12 +1,15 @@
 <script setup>
 import { inAnyExtImages } from '@/utils/extension.util.js'
 import { ref, watch } from 'vue'
+import { useSetup } from "@/composables/useSetup"
 import { log } from '@/utils/log.util.js'
 
 const props = defineProps({
   file: {type: Object}
 })
 const emit = defineEmits(['update:next', 'update:onload'])
+
+const { isImageByExt, isVideoByExt } = useSetup()
 
 const origin = location.origin
 
@@ -33,25 +36,29 @@ watch(
       video.addEventListener("ended", ()=>emit('update:next', file))
     }
   },
-  {deep: true, immediate: true}
+  { deep: true, immediate: true }
 )
 </script>
 
 <template>
   <img 
-      v-if="inAnyExtImages(file.ext)"
-      :src="`${origin}/api/client/content?uuid=${file.uuid}&type=${file.ext}`" 
-      class="content__item"
+      v-if="isImageByExt(file.ext)"
+      :src="`${origin}/api/client/content?uuid=${file.uuid}&type=${file.ext}`"
       @load="$emit('update:onload', true)"
+      class="content__item"
   />
 
   <video 
-      v-else ref="videoRef"
+      v-else-if="isVideoByExt(file.ext)" ref="videoRef"
       :src="`${origin}/api/client/content?uuid=${file.uuid}&type=${file.ext}`"
       type="video/mp4" muted autoplay autobuffer preload="auto"
-      class="content__item"
       @play="$emit('update:onload', true)"
+      class="content__item"
   ></video>
+
+  <div v-else>
+    Не допустимый формат файла
+  </div>
 </template>
 
 <style lang="scss" scoped>

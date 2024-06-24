@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const KEY_TOKEN = "__pioneer-token"
+export const KEY_TOKEN = "pioneer-token"
 
 const client = axios.create({
   baseURL: location.origin + "/api",
