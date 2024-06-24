@@ -1,5 +1,4 @@
 <script setup>
-import { inAnyExtImages } from '@/utils/extension.util.js'
 import { ref, watch } from 'vue'
 import { useSetup } from "@/composables/useSetup"
 import { log } from '@/utils/log.util.js'
@@ -19,7 +18,7 @@ let imageId = ref(null)
 watch(
   ()=>[props.file, videoRef.value],
   ([file, video])=>{
-    if( inAnyExtImages(file.ext) && imageId.value === null ){
+    if( isImageByExt(file.ext) && imageId.value === null ){
       log("image", file.uuid)
 
       imageId.value = setTimeout(()=>{
@@ -28,12 +27,16 @@ watch(
         clearTimeout(imageId.value)
         imageId.value = null
       }, file.time*1000)
-    }else{
+    }else if( isVideoByExt(file.ext) ){
       if(!video) return;
 
       log("video", file.uuid)
       video.play()
       video.addEventListener("ended", ()=>emit('update:next', file))
+    }else{
+      log("unknown", file.uuid)
+
+      emit('update:next', file)
     }
   },
   { deep: true, immediate: true }
