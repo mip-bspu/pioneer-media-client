@@ -66,8 +66,9 @@ watch(
 
 <style lang="scss" scoped>
 .content__item{
-  height: auto;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
 
   max-height: 100vh;
   max-width: 100vw;
