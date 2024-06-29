@@ -10,6 +10,9 @@ import { ref, watch } from 'vue'
 import { initialize, getSchedule } from '@/services/content.service.js'
 import { useAsync } from '@/composables/useAsync';
 import { log } from '@/utils/log.util.js'
+import { useSetup } from '@/composables/useSetup'
+
+const { onGetSetup } = useSetup()
 
 const {
   state: stateInitialize,
@@ -19,19 +22,16 @@ const {
 const TIME_TRANSITION = 1000
 
 let token = ref(localStorage.getItem(KEY_TOKEN) || "")
+let lastFile = ref(null)
 let file = ref(null)
 let content = ref([])
 
 async function onStart(){
   if(typeof token.value === "string" && token.value.length == 0) return; 
-
-  execInitialize(token.value).then(async (res)=>{
-    const response = await getSchedule()
-
-    if( response?.status === 200 ){
-      content.value = response.data
-    }
-  })
+  
+  onGetSetup()
+    .then(()=>execInitialize(token.value)) 
+    .then(()=>onGetSchedule())
 }
 
 onStart()

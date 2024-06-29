@@ -6,8 +6,6 @@ import * as mdijs from '@mdi/js'
 import '@/assets/style.css'
 
 import App from './App.vue'
-import "@/composables/useSetup"
-
 
 const app = createApp(App)
 
