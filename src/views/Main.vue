@@ -1,15 +1,14 @@
 <script setup>
 import Navbar from '@/components/Navbar.vue'
-import SvgIcon from '@jamescoyle/vue-icon'
-import VideoOrImageContent from '@/components/VideoOrImageContent.vue';
+import VideoOrImageContent from '@/components/VideoOrImageContent.vue'
 
+import SvgIcon from '@jamescoyle/vue-icon'
 import { mdiFaceMan } from '@mdi/js'
 
+import { reactive, ref, watch } from 'vue'
 import { KEY_TOKEN } from "@/client"
-import { ref, watch } from 'vue'
 import { initialize, getSchedule } from '@/services/content.service.js'
 import { useAsync } from '@/composables/useAsync';
-import { log } from '@/utils/log.util.js'
 import { useSetup } from '@/composables/useSetup'
 
 const { onGetSetup } = useSetup()
@@ -17,20 +16,44 @@ const { onGetSetup } = useSetup()
 const {
   state: stateInitialize,
   exec: execInitialize
-} = useAsync(initialize, {messageSuccess: "Инициализация прошла успешно"})
+} = useAsync(initialize, { messageSuccess: "Инициализация прошла успешно" })
 
-const TIME_TRANSITION = 1000
+const TIME_TRANSITION = 2000
+const TIME_DELAY_CHANGE = 200
 
 let token = ref(localStorage.getItem(KEY_TOKEN) || "")
-let lastFile = ref(null)
-let file = ref(null)
-let content = ref([])
+
+let schedule = reactive({
+  content: [],
+  lastFile: null,
+  file: null,
+  play: false,
+
+  trigger: false
+})
+
+let player = reactive({
+  isTransitionEnded: true,
+  isLoadEnded: false
+})
+
+const triggerSchedule = () => schedule.trigger = !schedule.trigger
+
+const onTransitionEnded = () => player.isTransitionEnded = true
+const onLoadEnded = () => player.isLoadEnded = true
+
+const equalLastFile = (file) => schedule.lastFile?.uuid && schedule.lastFile.uuid === file.uuid
+
+const isPlay = () => 
+  player.isTransitionEnded && player.isLoadEnded || 
+  player.isTransitionEnded && equalLastFile(schedule.file)
+
 
 async function onStart(){
   if(typeof token.value === "string" && token.value.length == 0) return; 
-  
-  onGetSetup()
-    .then(()=>execInitialize(token.value)) 
+
+  execInitialize(token.value)
+    .then(()=>onGetSetup()) 
     .then(()=>onGetSchedule())
 }
 
@@ -40,46 +63,72 @@ async function onGetSchedule(){
   const response = await getSchedule()
 
   if( response?.status === 200 ){
-    content.value = response.data
+    schedule.content = response.data
   }
 }
 
+function onNextFile(oldFile) {
+  if(schedule.content.length <= 1){
+    onGetSchedule()
+    return;
+  }
+
+  schedule.content = schedule.content.slice(1)
+}
+
+function playTransition() {
+  player.isTransitionEnded = false
+  player.isLoadEnded = false
+
+  schedule.play = false
+
+  setTimeout(onTransitionEnded, TIME_TRANSITION)
+}
+
 watch(
-  ()=>content.value,
-  (files)=>{
-    file.value = files[0]
+  ()=>schedule.content,
+  ()=>{
+    if(schedule.content.length == 0) return;
+    
+    schedule.lastFile = schedule.file    
+    let file = schedule.content[0]
+
+    if( !equalLastFile(file) ){
+      playTransition()
+
+      setTimeout(()=>schedule.file = schedule.content[0], TIME_DELAY_CHANGE)
+    }else{
+      triggerSchedule()
+    }
   },
-  {deep: true}
+  { deep: true }
 )
 
-let transitionActive = ref(false)
-
-function updateFiles(){
-  log("update")
-  transitionActive.value = true;
-
-  setTimeout(()=>{
-    if(content.value.length > 1){
-      content.value = content.value.slice(1)
-    }else{
-      onGetSchedule()
+watch(
+  ()=>[player.isTransitionEnded, player.isLoadEnded],
+  ([isTransitionEnded, isLoadEnded]) => {
+    if( isPlay() ) { 
+      schedule.play = true
     }
-  }, TIME_TRANSITION)
-}
+  },
+  { deep: true }
+)
 </script>
 
 <template>
 <div class="h-full flex items-center justify-center">
-  <Navbar @update:schedule="onGetSchedule"/>
+  <navbar @update:schedule="onGetSchedule"/>
 
-  <div v-if="file" class="content">
+  <div v-if="schedule.file" class="content">
     <video-or-image-content 
-        :file="file" 
-        @update:next="updateFiles"
-        @update:onload="()=>transitionActive = false"
+        :file="schedule.file"
+        :play="schedule.play"
+        :trigger="schedule.trigger"
+        @update:next="onNextFile"
+        @update:onload="onLoadEnded"
     />
 
-    <div :class="['content__transition', transitionActive ? 'active' : '']">
+    <div :class="['content__transition', !schedule.play ? 'active' : '']">
       <svg-icon type="mdi" :path="mdiFaceMan" class="content__icon"/>
     </div>
   </div>
@@ -104,7 +153,7 @@ function updateFiles(){
 </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .content{
   display: flex;
   justify-content: center;

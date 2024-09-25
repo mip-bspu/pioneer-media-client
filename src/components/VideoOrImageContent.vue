@@ -1,50 +1,57 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useSetup } from "@/composables/useSetup"
-import { log } from '@/utils/log.util.js'
 
 const props = defineProps({
-  file: {type: Object}
+  file: {type: Object},
+  play: {type: Boolean},
+  trigger: {type: Boolean}
 })
-const emit = defineEmits(['update:next', 'update:onload'])
+
+const emit = defineEmits(['update:onload', 'update:next'])
 
 const { isImageByExt, isVideoByExt } = useSetup()
 
+let videoRef = ref(null)
+
 const origin = location.origin
 
-let videoRef = ref(null)
-let imageId = ref(null)
+const updateFile = () => {
+  emit('update:next', props.file)
+}
 
 watch(
-  ()=>[props.file, videoRef.value],
-  ([file, video])=>{
-    if( isImageByExt(file.ext) && imageId.value === null ){
-      log("image", file.uuid)
+  ()=>[props.play, props.trigger],
+  ()=>{
+    let {play, file} = props
 
-      imageId.value = setTimeout(()=>{
-        emit('update:next', file)
+    if(play){
+      if( isImageByExt(file.ext) ){
+        setTimeout(updateFile, 3*1000)
+        
+        return;
+      }
+      
+      if(isVideoByExt(file.ext)){
+        if(!videoRef.value) return;
+    
+        videoRef.value.play()
 
-        clearTimeout(imageId.value)
-        imageId.value = null
-      }, file.time*1000)
-    }else if( isVideoByExt(file.ext) ){
-      if(!video) return;
-
-      log("video", file.uuid)
-      video.play()
-      video.addEventListener("ended", ()=>emit('update:next', file))
-    }else{
-      log("unknown", file.uuid)
-
-      emit('update:next', file)
+        return;
+      }
+      
+      console.log("unknown")
+      updateFile()
     }
   },
-  { deep: true, immediate: true }
+  {
+    deep: true
+  }
 )
 </script>
 
 <template>
-  <img 
+  <img
       v-if="isImageByExt(file.ext)"
       :src="`${origin}/api/client/content?uuid=${file.uuid}&type=${file.ext}`"
       @load="$emit('update:onload', true)"
@@ -56,6 +63,7 @@ watch(
       :src="`${origin}/api/client/content?uuid=${file.uuid}&type=${file.ext}`"
       type="video/mp4" muted autoplay autobuffer preload="auto"
       @play="$emit('update:onload', true)"
+      @ended="updateFile"
       class="content__item"
   ></video>
 
