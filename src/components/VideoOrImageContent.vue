@@ -17,7 +17,7 @@ let videoRef = ref(null)
 const origin = location.origin
 
 const getFileTimeSeconds = (file) => {
-  return (file.time && 0 < file.time && file.time <  3600 ? file.time : 10) * 1000
+  return (file.time && 0 < file.time && file.time <=  3600 ? file.time : 10) * 1000
 }
 
 const updateFile = () => {
@@ -31,7 +31,7 @@ watch(
 
     if(play){
       if( isImageByExt(file.ext) ){
-        setTimeout(updateFile, getFileTimeSeconds)
+        setTimeout(updateFile, getFileTimeSeconds(file))
         
         return;
       }

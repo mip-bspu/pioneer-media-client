@@ -8,7 +8,7 @@ import { mdiFaceMan } from '@mdi/js'
 import { reactive, ref, watch } from 'vue'
 import { KEY_TOKEN } from "@/client"
 import { initialize, getSchedule } from '@/services/content.service.js'
-import { useAsync } from '@/composables/useAsync';
+import { useAsync } from '@/composables/useAsync'
 import { useSetup } from '@/composables/useSetup'
 
 const { onGetSetup } = useSetup()
@@ -27,17 +27,27 @@ let schedule = reactive({
   content: [],
   lastFile: null,
   file: null,
+})
+
+let player = reactive({
+  isTransitionEnded: true,
+  isLoadEnded: false,
   play: false,
 
   trigger: false
 })
 
-let player = reactive({
-  isTransitionEnded: true,
-  isLoadEnded: false
-})
+watch(
+  ()=>[player.isTransitionEnded, player.isLoadEnded],
+  ([isTransitionEnded, isLoadEnded]) => {
+    if( isPlay() ) { 
+      player.play = true
+    }
+  },
+  { deep: true }
+)
 
-const triggerSchedule = () => schedule.trigger = !schedule.trigger
+const triggerPlayer = () => player.trigger = !player.trigger
 
 const onTransitionEnded = () => player.isTransitionEnded = true
 const onLoadEnded = () => player.isLoadEnded = true
@@ -80,7 +90,7 @@ function playTransition() {
   player.isTransitionEnded = false
   player.isLoadEnded = false
 
-  schedule.play = false
+  player.play = false
 
   setTimeout(onTransitionEnded, TIME_TRANSITION)
 }
@@ -98,17 +108,7 @@ watch(
 
       setTimeout(()=>schedule.file = schedule.content[0], TIME_DELAY_CHANGE)
     }else{
-      triggerSchedule()
-    }
-  },
-  { deep: true }
-)
-
-watch(
-  ()=>[player.isTransitionEnded, player.isLoadEnded],
-  ([isTransitionEnded, isLoadEnded]) => {
-    if( isPlay() ) { 
-      schedule.play = true
+      triggerPlayer()
     }
   },
   { deep: true }
@@ -119,21 +119,21 @@ watch(
 <div class="h-full flex items-center justify-center">
   <navbar @update:schedule="onGetSchedule"/>
 
-  <div v-if="schedule.file" class="content">
+  <div v-if="schedule.file && schedule.content.length" class="content">
     <video-or-image-content 
         :file="schedule.file"
-        :play="schedule.play"
-        :trigger="schedule.trigger"
+        :play="player.play"
+        :trigger="player.trigger"
         @update:next="onNextFile"
         @update:onload="onLoadEnded"
     />
 
-    <div :class="['content__transition', !schedule.play ? 'active' : '']">
+    <div :class="['content__transition', !player.play ? 'active' : '']">
       <svg-icon type="mdi" :path="mdiFaceMan" class="content__icon"/>
     </div>
   </div>
 
-  <form @submit.prevent="onStart" class="mx-600 p-md" v-else>
+  <form v-else-if="token.length == 0" @submit.prevent="onStart" class="mx-600 p-md">
     <div class="flex-col">
       <span class="text-xl">Введите токен:</span>
 
@@ -150,6 +150,12 @@ watch(
       <div class="text-green-600">{{ stateInitialize.messageSuccess }}</div>
     </div>
   </form>
+
+  <div v-else class="w-full flex flex-col items-center justify-center">
+    <div class="bg-slate-200 p-md w-2/5 rounded-md text-center">
+      <span class="text-zinc-600 text-2xl">Контент не задан</span>
+    </div>
+  </div>
 </div>
 </template>
 
