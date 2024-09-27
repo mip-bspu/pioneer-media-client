@@ -10,6 +10,7 @@ import { KEY_TOKEN } from "@/client"
 import { initialize, getSchedule } from '@/services/content.service.js'
 import { useAsync } from '@/composables/useAsync'
 import { useSetup } from '@/composables/useSetup'
+import { useWorker } from '@/composables/useWorker'
 
 const { onGetSetup } = useSetup()
 
@@ -20,6 +21,7 @@ const {
 
 const TIME_TRANSITION = 2000
 const TIME_DELAY_CHANGE = 200
+const TIME_INTERVAL_SCHEDULE = 5000
 
 let token = ref(localStorage.getItem(KEY_TOKEN) || "")
 
@@ -36,6 +38,15 @@ let player = reactive({
 
   trigger: false
 })
+
+const {
+  close: closeSchedule, 
+  worker: workerSchedule 
+} = useWorker(async () => {
+  schedule.content.length !== 0 ? 
+    closeSchedule() : 
+    onGetSchedule()
+}, TIME_INTERVAL_SCHEDULE) // warning: the worker duplicated after hmr update if the file has been changed
 
 watch(
   ()=>[player.isTransitionEnded, player.isLoadEnded],
@@ -59,14 +70,13 @@ const isPlay = () =>
   player.isTransitionEnded && equalLastFile(schedule.file)
 
 
-async function onStart(){
+function onStart(){
   if(typeof token.value === "string" && token.value.length == 0) return; 
 
   execInitialize(token.value)
     .then(()=>onGetSetup()) 
     .then(()=>onGetSchedule())
 }
-
 onStart()
 
 async function onGetSchedule(){
@@ -74,6 +84,12 @@ async function onGetSchedule(){
 
   if( response?.status === 200 ){
     schedule.content = response.data
+
+    if(schedule.content.length === 0){
+      workerSchedule()
+    }
+  } else {
+    workerSchedule()
   }
 }
 
