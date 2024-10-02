@@ -19,9 +19,9 @@ const {
   exec: execInitialize
 } = useAsync(initialize, { messageSuccess: "Инициализация прошла успешно" })
 
-const TIME_TRANSITION = 2000
-const TIME_DELAY_CHANGE = 200
-const TIME_INTERVAL_SCHEDULE = 5000
+const TIME_TRANSITION = +__APP_ENV__.VITE_TIME_TRANSITION
+const TIME_DELAY_CHANGE = +__APP_ENV__.VITE_TIME_DELAY_CHANGE
+const TIME_INTERVAL_SCHEDULE = +__APP_ENV__.VITE_TIME_INTERVAL_SCHEDULE
 
 let token = ref(localStorage.getItem(KEY_TOKEN) || "")
 
