@@ -19,7 +19,6 @@ export function useAsync(cb, opts = {messageSuccess: ""}) {
       const res = await cb(...args)
 
       if(opts.messageSuccess.length > 0){
-
         state.messageSuccess = opts["messageSuccess"]
       }
 

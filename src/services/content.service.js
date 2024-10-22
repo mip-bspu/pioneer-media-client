@@ -1,11 +1,15 @@
-import {default as client, KEY_TOKEN} from "@/client";
+import {default as client, KEY_TOKEN, API_BASE_URL} from "@/client";
+import axios from "axios"
 
 
 export async function initialize(token){
-  const response = await client.get("/client", {
-    params: {
-      token: token
+  const response = await axios.get("/client", {
+    headers: {
+      [KEY_TOKEN]: token
     }
+  }, {  
+    baseURL: API_BASE_URL,
+    timeout: 60 * 1000
   })
 
   if(response?.status === 200){

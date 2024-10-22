@@ -8,9 +8,7 @@ import { mdiFaceMan } from '@mdi/js'
 import { reactive, ref, watch } from 'vue'
 import { KEY_TOKEN } from "@/client"
 import { initialize, getSchedule } from '@/services/content.service.js'
-import { useAsync } from '@/composables/useAsync'
-import { useSetup } from '@/composables/useSetup'
-import { useWorker } from '@/composables/useWorker'
+import { useWorker, useSetup, useAsync } from '@/composables'
 
 const { onGetSetup } = useSetup()
 
@@ -24,6 +22,10 @@ const TIME_DELAY_CHANGE = +__APP_ENV__.VITE_TIME_DELAY_CHANGE
 const TIME_INTERVAL_SCHEDULE = +__APP_ENV__.VITE_TIME_INTERVAL_SCHEDULE
 
 let token = ref(localStorage.getItem(KEY_TOKEN) || "")
+
+let client = reactive({
+  initialized: false 
+})
 
 let schedule = reactive({
   content: [],
@@ -70,12 +72,17 @@ const isPlay = () =>
   player.isTransitionEnded && equalLastFile(schedule.file)
 
 
-function onStart(){
+async function onStart(){
   if(typeof token.value === "string" && token.value.length == 0) return; 
 
-  execInitialize(token.value)
-    .then(()=>onGetSetup()) 
-    .then(()=>onGetSchedule())
+  const resp = await execInitialize(token.value)
+  if(resp?.status === 200){
+    try{
+      client.initialized = true
+      await onGetSetup()
+      await onGetSchedule()
+    }catch(e){}
+  }
 }
 onStart()
 
@@ -149,7 +156,7 @@ watch(
     </div>
   </div>
 
-  <form v-else-if="token.length == 0" @submit.prevent="onStart" class="mx-600 p-md">
+  <form v-else-if="!client.initialized" @submit.prevent="onStart" class="mx-600 p-md">
     <div class="flex-col">
       <span class="text-xl">Введите токен:</span>
 

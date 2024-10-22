@@ -65,7 +65,7 @@ watch(
   <video 
       v-else-if="isVideoByExt(file.ext)" ref="videoRef"
       :src="`${origin}/api/client/content?uuid=${file.uuid}&type=${file.ext}`"
-      type="video/mp4" muted autoplay autobuffer preload="auto"
+      type="video/mp4" autoplay autobuffer preload="auto"
       @play="$emit('update:onload', true)"
       @ended="updateFile"
       class="content__item"
